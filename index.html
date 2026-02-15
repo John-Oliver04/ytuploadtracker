@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>365 Days YouTube Upload Tracker</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+        text-align: center;
+        padding: 20px;
+    }
+    .box {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 400px;
+        margin: auto;
+    }
+    button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .done {
+        background: #22c55e;
+        color: #000;
+    }
+    .reset {
+        background: #ef4444;
+        color: #fff;
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2>📅 365 Days Upload Tracker</h2>
+    <p id="date"></p>
+    <h3 id="dayNumber"></h3>
+    <p id="status"></p>
+
+    <button class="done" onclick="markDone()">✅ Mark as Uploaded</button>
+    <br><br>
+    <button class="reset" onclick="resetDay()">♻ Reset Today</button>
+</div>
+
+<script>
+function getDayOfYear(date) {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = date - start;
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
+}
+
+const today = new Date();
+const dayOfYear = getDayOfYear(today);
+const key = "upload_day_" + dayOfYear;
+
+document.getElementById("date").innerText =
+    today.toDateString();
+
+document.getElementById("dayNumber").innerText =
+    "Day " + dayOfYear + " of 365";
+
+function loadStatus() {
+    const status = localStorage.getItem(key);
+    document.getElementById("status").innerText =
+        status === "done"
+        ? "🔥 Nakapag-upload ka ngayon!"
+        : "❌ Wala pang upload today";
+}
+
+function markDone() {
+    localStorage.setItem(key, "done");
+    loadStatus();
+}
+
+function resetDay() {
+    localStorage.removeItem(key);
+    loadStatus();
+}
+
+loadStatus();
+</script>
+
+</body>
+</html>
