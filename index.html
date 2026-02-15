@@ -178,6 +178,23 @@ button{
   <div class="modal-card">
     <h2 id="modalTitle"></h2>
     <p id="modalText"></p>
+    <input id="ytLink" type="text"
+placeholder="Paste YouTube link here"
+style="width:100%;padding:10px;border-radius:8px;border:none;margin-bottom:10px">
+
+<div id="preview" style="margin-bottom:10px"></div>
+
+<button id="openYT" style="display:none;margin-bottom:10px;width:100%">
+▶ Open on YouTube
+</button>
+
+<div class="buttons">
+  <button class="yes" onclick="setUploaded()">Yes</button>
+  <button class="no" onclick="setMissed()">No</button>
+</div>
+
+<br>
+<button class="cancel" onclick="clearDay()">♻ Clear</button>
 
     <div class="buttons">
       <button class="yes" onclick="setStatus('done')">Yes</button>
@@ -211,18 +228,14 @@ for(let i=1;i<=365;i++){
   const date=new Date(today.getFullYear(),0,i);
   const isFuture=i>todayDay;
 
-  const saved=localStorage.getItem("day_"+i);
-  if(saved) d.classList.add(saved);
+  const status=localStorage.getItem("day_"+i+"_status");
+  if(status) d.classList.add(status);
 
   if(i===todayDay) d.classList.add("today");
 
   if(isFuture){
     d.classList.add("locked");
-    const lock=document.createElement("span");
-    lock.innerText="🔐";
-    lock.className="lock";
-    d.innerHTML="";
-    d.appendChild(lock);
+    d.innerHTML="🔐";
   }else{
     d.onclick=()=>{
       selectedDay=i;
@@ -234,22 +247,74 @@ for(let i=1;i<=365;i++){
 }
 
 function openModal(day,date){
-  document.getElementById("modalTitle").innerText=
-    `Day ${day}`;
-  document.getElementById("modalText").innerText=
-    `This is Day ${day} — ${date.toDateString()}.
-Did you upload a video on YouTube?`;
-  document.getElementById("modal").classList.add("active");
+  const modal=document.getElementById("modal");
+  const status=localStorage.getItem("day_"+day+"_status");
+  const link=localStorage.getItem("day_"+day+"_link");
+
+  document.getElementById("modalTitle").innerText=`Day ${day}`;
+  document.getElementById("modalText").innerHTML=
+    `This is Day ${day} — ${date.toDateString()}<br>
+     Did you upload a video on YouTube?`;
+
+  const input=document.getElementById("ytLink");
+  const preview=document.getElementById("preview");
+  const openBtn=document.getElementById("openYT");
+
+  input.value=link||"";
+
+  if(status==="done" && link){
+    const vid=getVideoId(link);
+    preview.innerHTML=
+      `<img src="https://img.youtube.com/vi/${vid}/hqdefault.jpg">`;
+    openBtn.style.display="block";
+    openBtn.onclick=()=>window.open(link,"_blank");
+  }else{
+    preview.innerHTML="";
+    openBtn.style.display="none";
+  }
+
+  modal.classList.add("active");
 }
 
 function closeModal(){
   document.getElementById("modal").classList.remove("active");
 }
 
-function setStatus(status){
-  localStorage.setItem("day_"+selectedDay,status);
+function isValidYouTube(url){
+  return url.includes("youtube.com") || url.includes("youtu.be");
+}
+
+function getVideoId(url){
+  if(url.includes("youtu.be/"))
+    return url.split("youtu.be/")[1].split("?")[0];
+  if(url.includes("v="))
+    return url.split("v=")[1].split("&")[0];
+  return "";
+}
+
+function setUploaded(){
+  const link=document.getElementById("ytLink").value.trim();
+  if(!isValidYouTube(link)){
+    alert("Please enter a valid YouTube link.");
+    return;
+  }
+  localStorage.setItem("day_"+selectedDay+"_status","done");
+  localStorage.setItem("day_"+selectedDay+"_link",link);
+  location.reload();
+}
+
+function setMissed(){
+  localStorage.setItem("day_"+selectedDay+"_status","missed");
+  localStorage.removeItem("day_"+selectedDay+"_link");
+  location.reload();
+}
+
+function clearDay(){
+  localStorage.removeItem("day_"+selectedDay+"_status");
+  localStorage.removeItem("day_"+selectedDay+"_link");
   location.reload();
 }
 </script>
+
 
 </body
