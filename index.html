@@ -2,90 +2,127 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>365 Days YouTube Upload Tracker</title>
+<title>365 Days Upload Tracker</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #0f172a;
-        color: #e5e7eb;
-        text-align: center;
-        padding: 20px;
-    }
-    .box {
-        background: #1e293b;
-        padding: 20px;
-        border-radius: 10px;
-        max-width: 400px;
-        margin: auto;
-    }
-    button {
-        padding: 10px 20px;
-        margin-top: 10px;
-        font-size: 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-    }
-    .done {
-        background: #22c55e;
-        color: #000;
-    }
-    .reset {
-        background: #ef4444;
-        color: #fff;
-    }
+body {
+    background:#0f172a;
+    color:#e5e7eb;
+    font-family:Arial, sans-serif;
+    text-align:center;
+    padding:20px;
+}
+
+h1 {
+    margin-bottom:10px;
+}
+
+#info {
+    margin-bottom:20px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns: repeat(14, 1fr);
+    gap:6px;
+    max-width:500px;
+    margin:auto;
+}
+
+.day {
+    width:30px;
+    height:30px;
+    background:#334155;
+    border-radius:4px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.day.done {
+    background:#22c55e;
+}
+
+.day.missed {
+    background:#ef4444;
+}
+
+.day.today {
+    outline:2px solid #38bdf8;
+}
+
+.legend {
+    margin-top:20px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    font-size:14px;
+}
+
+.legend span {
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+.box {
+    width:14px;
+    height:14px;
+    border-radius:3px;
+}
 </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>📅 365 Days Upload Tracker</h2>
-    <p id="date"></p>
-    <h3 id="dayNumber"></h3>
-    <p id="status"></p>
+<h1>📅 365 Days Upload Tracker</h1>
+<div id="info"></div>
 
-    <button class="done" onclick="markDone()">✅ Mark as Uploaded</button>
-    <br><br>
-    <button class="reset" onclick="resetDay()">♻ Reset Today</button>
+<div class="grid" id="grid"></div>
+
+<div class="legend">
+    <span><div class="box" style="background:#22c55e"></div> Uploaded</span>
+    <span><div class="box" style="background:#ef4444"></div> Missed</span>
+    <span><div class="box" style="background:#334155"></div> Empty</span>
 </div>
 
 <script>
 function getDayOfYear(date) {
     const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
+    return Math.floor((date - start) / (1000*60*60*24));
 }
 
 const today = new Date();
-const dayOfYear = getDayOfYear(today);
-const key = "upload_day_" + dayOfYear;
+const todayDay = getDayOfYear(today);
+const grid = document.getElementById("grid");
 
-document.getElementById("date").innerText =
-    today.toDateString();
+document.getElementById("info").innerHTML =
+    `<strong>Today:</strong> Day ${todayDay} of 365`;
 
-document.getElementById("dayNumber").innerText =
-    "Day " + dayOfYear + " of 365";
+for(let i=1;i<=365;i++){
+    const block = document.createElement("div");
+    block.classList.add("day");
+    block.title = "Day " + i;
 
-function loadStatus() {
-    const status = localStorage.getItem(key);
-    document.getElementById("status").innerText =
-        status === "done"
-        ? "🔥 Nakapag-upload ka ngayon!"
-        : "❌ Wala pang upload today";
+    const status = localStorage.getItem("day_"+i);
+    if(status) block.classList.add(status);
+
+    if(i === todayDay) block.classList.add("today");
+
+    block.onclick = () => {
+        if(block.classList.contains("done")){
+            block.classList.remove("done");
+            block.classList.add("missed");
+            localStorage.setItem("day_"+i, "missed");
+        } 
+        else if(block.classList.contains("missed")){
+            block.classList.remove("missed");
+            localStorage.removeItem("day_"+i);
+        } 
+        else {
+            block.classList.add("done");
+            localStorage.setItem("day_"+i, "done");
+        }
+    };
+
+    grid.appendChild(block);
 }
-
-function markDone() {
-    localStorage.setItem(key, "done");
-    loadStatus();
-}
-
-function resetDay() {
-    localStorage.removeItem(key);
-    loadStatus();
-}
-
-loadStatus();
 </script>
 
 </body>
