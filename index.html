@@ -2,128 +2,251 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>365 Days Upload Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>365 YouTube Upload Tracker</title>
+
 <style>
-body {
-    background:#0f172a;
-    color:#e5e7eb;
-    font-family:Arial, sans-serif;
-    text-align:center;
-    padding:20px;
+:root {
+  --bg:#0f172a;
+  --card:#1e293b;
+  --empty:#334155;
+  --green:#22c55e;
+  --red:#ef4444;
+  --accent:#38bdf8;
 }
 
-h1 {
-    margin-bottom:10px;
+body{
+  margin:0;
+  font-family:system-ui, Arial, sans-serif;
+  background:var(--bg);
+  color:#e5e7eb;
+  display:flex;
+  justify-content:center;
 }
 
-#info {
-    margin-bottom:20px;
+.app{
+  width:100%;
+  max-width:420px;
+  padding:16px;
 }
 
-.grid {
-    display:grid;
-    grid-template-columns: repeat(14, 1fr);
-    gap:6px;
-    max-width:500px;
-    margin:auto;
+h1{
+  text-align:center;
+  font-size:1.3rem;
+  margin-bottom:10px;
 }
 
-.day {
-    width:30px;
-    height:30px;
-    background:#334155;
-    border-radius:4px;
-    cursor:pointer;
-    transition:0.2s;
+.info{
+  text-align:center;
+  margin-bottom:14px;
+  font-size:0.9rem;
+  color:#cbd5f5;
 }
 
-.day.done {
-    background:#22c55e;
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:8px;
 }
 
-.day.missed {
-    background:#ef4444;
+.day{
+  aspect-ratio:1/1;
+  background:var(--empty);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:0.7rem;
+  cursor:pointer;
+  position:relative;
 }
 
-.day.today {
-    outline:2px solid #38bdf8;
+.day.done{ background:var(--green); }
+.day.missed{ background:var(--red); }
+
+.day.today{
+  outline:2px solid var(--accent);
 }
 
-.legend {
-    margin-top:20px;
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    font-size:14px;
+.day.locked{
+  opacity:0.4;
+  cursor:not-allowed;
 }
 
-.legend span {
-    display:flex;
-    align-items:center;
-    gap:5px;
+.lock{
+  position:absolute;
+  font-size:0.9rem;
 }
-.box {
-    width:14px;
-    height:14px;
-    border-radius:3px;
+
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.8);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+
+.modal.active{ display:flex; }
+
+.modal-card{
+  background:var(--card);
+  border-radius:14px;
+  padding:20px;
+  width:100%;
+  max-width:360px;
+  animation:pop .2s ease;
+}
+
+@keyframes pop{
+  from{ transform:scale(.9); opacity:0; }
+  to{ transform:scale(1); opacity:1; }
+}
+
+.modal-card h2{
+  font-size:1.1rem;
+  margin-bottom:10px;
+}
+
+.modal-card p{
+  font-size:.95rem;
+  margin-bottom:20px;
+  line-height:1.4;
+}
+
+.buttons{
+  display:flex;
+  gap:10px;
+}
+
+button{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-size:.95rem;
+  cursor:pointer;
+}
+
+.yes{ background:var(--green); }
+.no{ background:var(--red); }
+.cancel{ background:#475569; }
+
+.legend{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  font-size:.75rem;
+  margin-top:16px;
+}
+.legend span{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.box{
+  width:12px;height:12px;border-radius:3px;
 }
 </style>
 </head>
-<body>
 
-<h1>📅 365 Days Upload Tracker</h1>
-<div id="info"></div>
+<body>
+<div class="app">
+
+<h1>📅 365 Days YouTube Tracker</h1>
+<div class="info" id="info"></div>
 
 <div class="grid" id="grid"></div>
 
 <div class="legend">
-    <span><div class="box" style="background:#22c55e"></div> Uploaded</span>
-    <span><div class="box" style="background:#ef4444"></div> Missed</span>
-    <span><div class="box" style="background:#334155"></div> Empty</span>
+  <span><div class="box" style="background:#22c55e"></div> Uploaded</span>
+  <span><div class="box" style="background:#ef4444"></div> Not Uploaded</span>
+  <span><div class="box" style="background:#334155"></div> Empty</span>
+  <span>🔐 Locked</span>
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+
+    <div class="buttons">
+      <button class="yes" onclick="setStatus('done')">Yes</button>
+      <button class="no" onclick="setStatus('missed')">No</button>
+    </div>
+    <br>
+    <button class="cancel" onclick="closeModal()">Cancel</button>
+  </div>
 </div>
 
 <script>
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    return Math.floor((date - start) / (1000*60*60*24));
+function getDayOfYear(date){
+  const start=new Date(date.getFullYear(),0,0);
+  return Math.floor((date-start)/(1000*60*60*24));
 }
 
-const today = new Date();
-const todayDay = getDayOfYear(today);
-const grid = document.getElementById("grid");
+const today=new Date();
+const todayDay=getDayOfYear(today);
+const grid=document.getElementById("grid");
+const info=document.getElementById("info");
 
-document.getElementById("info").innerHTML =
-    `<strong>Today:</strong> Day ${todayDay} of 365`;
+info.innerHTML=`Today is <b>Day ${todayDay}</b> of 365`;
+
+let selectedDay=null;
 
 for(let i=1;i<=365;i++){
-    const block = document.createElement("div");
-    block.classList.add("day");
-    block.title = "Day " + i;
+  const d=document.createElement("div");
+  d.className="day";
+  d.innerText=i;
 
-    const status = localStorage.getItem("day_"+i);
-    if(status) block.classList.add(status);
+  const date=new Date(today.getFullYear(),0,i);
+  const isFuture=i>todayDay;
 
-    if(i === todayDay) block.classList.add("today");
+  const saved=localStorage.getItem("day_"+i);
+  if(saved) d.classList.add(saved);
 
-    block.onclick = () => {
-        if(block.classList.contains("done")){
-            block.classList.remove("done");
-            block.classList.add("missed");
-            localStorage.setItem("day_"+i, "missed");
-        } 
-        else if(block.classList.contains("missed")){
-            block.classList.remove("missed");
-            localStorage.removeItem("day_"+i);
-        } 
-        else {
-            block.classList.add("done");
-            localStorage.setItem("day_"+i, "done");
-        }
+  if(i===todayDay) d.classList.add("today");
+
+  if(isFuture){
+    d.classList.add("locked");
+    const lock=document.createElement("span");
+    lock.innerText="🔐";
+    lock.className="lock";
+    d.innerHTML="";
+    d.appendChild(lock);
+  }else{
+    d.onclick=()=>{
+      selectedDay=i;
+      openModal(i,date);
     };
+  }
 
-    grid.appendChild(block);
+  grid.appendChild(d);
+}
+
+function openModal(day,date){
+  document.getElementById("modalTitle").innerText=
+    `Day ${day}`;
+  document.getElementById("modalText").innerText=
+    `This is Day ${day} — ${date.toDateString()}.
+Did you upload a video on YouTube?`;
+  document.getElementById("modal").classList.add("active");
+}
+
+function closeModal(){
+  document.getElementById("modal").classList.remove("active");
+}
+
+function setStatus(status){
+  localStorage.setItem("day_"+selectedDay,status);
+  location.reload();
 }
 </script>
 
-</body>
-</html>
+</body
